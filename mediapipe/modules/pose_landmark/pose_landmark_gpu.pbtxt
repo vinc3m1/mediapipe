@@ -29,7 +29,7 @@
 
 type: "PoseLandmarkGpu"
 
-# GPU image. (GpuBuffer)
+# CPU image. (GpuBuffer)
 input_stream: "IMAGE:image"
 
 # Whether to filter landmarks across different input images to reduce jitter.
@@ -38,11 +38,11 @@ input_side_packet: "SMOOTH_LANDMARKS:smooth_landmarks"
 
 # Whether to predict the segmentation mask. If unspecified, functions as set to
 # false. (bool)
-input_side_packet: "ENABLE_SEGMENTATION:enable_segmentation"
+# input_side_packet: "ENABLE_SEGMENTATION:enable_segmentation"
 
 # Whether to filter segmentation mask across different input images to reduce
 # jitter. If unspecified, functions as set to true. (bool)
-input_side_packet: "SMOOTH_SEGMENTATION:smooth_segmentation"
+# input_side_packet: "SMOOTH_SEGMENTATION:smooth_segmentation"
 
 # Complexity of the pose landmark model: 0, 1 or 2. Landmark accuracy as well as
 # inference latency generally go up with the model complexity. If unspecified,
@@ -105,7 +105,7 @@ output_stream: "LANDMARKS:pose_landmarks"
 output_stream: "WORLD_LANDMARKS:pose_world_landmarks"
 
 # Segmentation mask. (GpuBuffer in RGBA, with the same mask values in R and A)
-output_stream: "SEGMENTATION_MASK:segmentation_mask"
+# output_stream: "SEGMENTATION_MASK:segmentation_mask"
 
 # Extra outputs (for debugging, for instance).
 # Detected poses. (Detection)
@@ -114,6 +114,19 @@ output_stream: "DETECTION:pose_detection"
 output_stream: "ROI_FROM_LANDMARKS:pose_rect_from_landmarks"
 # Regions of interest calculated based on pose detections. (NormalizedRect)
 output_stream: "ROI_FROM_DETECTION:pose_rect_from_detection"
+
+
+node: {
+  calculator: "ColorConvertCalculator"
+  input_stream: "RGB_IN:image"
+  output_stream: "RGBA_OUT:image_rgba"
+}
+
+node: {
+  calculator: "ImageFrameToGpuBufferCalculator"
+  input_stream: "image_rgba"
+  output_stream: "image_gpu"
+}
 
 # When the optional input side packet "use_prev_landmarks" is either absent or
 # set to true, uses the landmarks on the previous image to help localize
@@ -140,7 +153,7 @@ node: {
 # Calculates size of the image.
 node {
   calculator: "ImagePropertiesCalculator"
-  input_stream: "IMAGE_GPU:image"
+  input_stream: "IMAGE:image"
   output_stream: "SIZE:image_size"
 }
 
@@ -149,7 +162,7 @@ node {
 # round of pose detection.
 node {
   calculator: "GateCalculator"
-  input_stream: "image"
+  input_stream: "image_gpu"
   input_stream: "image_size"
   input_stream: "DISALLOW:prev_pose_rect_from_landmarks_is_present"
   output_stream: "image_for_pose_detection"
@@ -205,7 +218,7 @@ node {
   calculator: "PoseLandmarkByRoiGpu"
   input_side_packet: "MODEL_COMPLEXITY:model_complexity"
   input_side_packet: "ENABLE_SEGMENTATION:enable_segmentation"
-  input_stream: "IMAGE:image"
+  input_stream: "IMAGE:image_gpu"
   input_stream: "ROI:pose_rect"
   output_stream: "LANDMARKS:unfiltered_pose_landmarks"
   output_stream: "AUXILIARY_LANDMARKS:unfiltered_auxiliary_landmarks"
@@ -242,7 +255,7 @@ node {
 # timestamp bound update occurs to jump start the feedback loop.
 node {
   calculator: "PreviousLoopbackCalculator"
-  input_stream: "MAIN:image"
+  input_stream: "MAIN:image_gpu"
   input_stream: "LOOP:pose_rect_from_landmarks"
   input_stream_info: {
     tag_index: "LOOP"
