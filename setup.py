@@ -29,7 +29,7 @@ import setuptools.command.build_ext as build_ext
 import setuptools.command.build_py as build_py
 import setuptools.command.install as install
 
-__version__ = '0.0.1-dev6'
+__version__ = '0.0.1-dev13'
 IS_WINDOWS = (platform.system() == 'Windows')
 MP_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 MP_DIR_INIT_PY = os.path.join(MP_ROOT_PATH, 'mediapipe/__init__.py')
@@ -240,6 +240,8 @@ class BuildBinaryGraphs(build_ext.build_ext):
         '--copt=-DNDEBUG',
         '--copt=-DMESA_EGL_NO_X11_HEADERS',
         '--copt=-DEGL_NO_X11',
+        '--config=cuda',
+        '--spawn_strategy=local',
         '--action_env=PYTHON_BIN_PATH=' + _normalize_path(sys.executable),
         os.path.join('mediapipe/modules/', graph_path),
     ]
@@ -276,7 +278,7 @@ class BuildExtension(build_ext.build_ext):
   boolean_options = build_ext.build_ext.boolean_options + ['link-opencv']
 
   def initialize_options(self):
-    self.link_opencv = False
+    self.link_opencv = True
     build_ext.build_ext.initialize_options(self)
 
   def finalize_options(self):
@@ -298,6 +300,8 @@ class BuildExtension(build_ext.build_ext):
         '--copt=-DNDEBUG',
         '--copt=-DMESA_EGL_NO_X11_HEADERS',
         '--copt=-DEGL_NO_X11',
+        '--config=cuda',
+        '--spawn_strategy=local',
         '--action_env=PYTHON_BIN_PATH=' + _normalize_path(sys.executable),
         str(ext.bazel_target + '.so'),
     ]
@@ -327,7 +331,7 @@ class BuildPy(build_py.build_py):
   boolean_options = build_py.build_py.boolean_options + ['link-opencv']
 
   def initialize_options(self):
-    self.link_opencv = False
+    self.link_opencv = True
     build_py.build_py.initialize_options(self)
 
   def finalize_options(self):
@@ -355,7 +359,7 @@ class Install(install.install):
   boolean_options = install.install.boolean_options + ['link-opencv']
 
   def initialize_options(self):
-    self.link_opencv = False
+    self.link_opencv = True
     install.install.initialize_options(self)
 
   def finalize_options(self):
